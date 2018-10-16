@@ -201,9 +201,16 @@ class OrderBook extends EventEmitter {
     const pair = this.pairs.get(pairId);
     if (pair) {
       this.pairs.delete(pairId);
-      this.matchingEngines.delete(pairId);
-      // TODO: invalidate all orders for this pair
+      const matchingEngine = this.matchingEngines.get(pairId);
       // TODO: update handshake state
+      if (matchingEngine) {
+        if (this.pool) {
+          matchingEngine.ownOrders.buy.forEach(this.pool.broadcastOrderInvalidation);
+          matchingEngine.ownOrders.sell.forEach(this.pool.broadcastOrderInvalidation);
+        }
+
+        this.matchingEngines.delete(pairId);
+      }
       return pair.destroy();
     } else {
       throw errors.PAIR_DOES_NOT_EXIST(pairId);
