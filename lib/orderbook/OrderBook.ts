@@ -171,6 +171,9 @@ class OrderBook extends EventEmitter {
     this.pairs.set(pairInstance.id, pairInstance);
     this.matchingEngines.set(pairInstance.id, new MatchingEngine(this.logger, pairInstance.id));
 
+    if (this.pool) {
+      this.pool.updateHandshake({ pairs: this.pairIds });
+    }
     return pairInstance;
   }
 
@@ -202,7 +205,7 @@ class OrderBook extends EventEmitter {
     if (pair) {
       this.pairs.delete(pairId);
       const matchingEngine = this.matchingEngines.get(pairId);
-      // TODO: update handshake state
+
       if (matchingEngine) {
         if (this.pool) {
           matchingEngine.ownOrders.buy.forEach(this.pool.broadcastOrderInvalidation);
@@ -210,6 +213,10 @@ class OrderBook extends EventEmitter {
         }
 
         this.matchingEngines.delete(pairId);
+      }
+
+      if (this.pool) {
+        this.pool.updateHandshake({ pairs: this.pairIds });
       }
       return pair.destroy();
     } else {
